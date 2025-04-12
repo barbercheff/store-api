@@ -28,7 +28,17 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDTO createCategory(CategoryDTO categoryDTO) {
-        Category savedCategory = categoryRepository.save(CategoryMapper.toEntity(categoryDTO));
+        Category category = CategoryMapper.toEntity(categoryDTO);
+
+        if (categoryDTO.getParentCategoryId() != null) {
+            Category parentCategory = categoryRepository.findById(categoryDTO.getParentCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent category not found with id: " + categoryDTO.getParentCategoryId()));
+            category.setParentCategory(parentCategory);
+        } else {
+            category.setParentCategory(null);
+        }
+
+        Category savedCategory = categoryRepository.save(category);
         return CategoryMapper.toDto(savedCategory);
     }
 
@@ -45,6 +55,14 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
 
         existingCategory.setName(categoryDTO.getName());
+
+        if (categoryDTO.getParentCategoryId() != null) {
+            Category parentCategory = categoryRepository.findById(categoryDTO.getParentCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent category not found with id: " + categoryDTO.getParentCategoryId()));
+            existingCategory.setParentCategory(parentCategory);
+        } else {
+            existingCategory.setParentCategory(null);
+        }
 
         Category updatedCategory = categoryRepository.save(existingCategory);
         return CategoryMapper.toDto(updatedCategory);

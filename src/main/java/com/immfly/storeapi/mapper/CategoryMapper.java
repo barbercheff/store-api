@@ -8,12 +8,14 @@ public class CategoryMapper {
         if (category == null) {
             return null;
         }
+
         CategoryDTO dto = new CategoryDTO();
         dto.setId(category.getId());
         dto.setName(category.getName());
         if (category.getParentCategory() != null) {
             dto.setParentCategoryId(category.getParentCategory().getId());
         }
+
         return dto;
     }
 
@@ -21,6 +23,7 @@ public class CategoryMapper {
         if (dto == null) {
             return null;
         }
+
         Category category = new Category();
         category.setId(dto.getId());
         category.setName(dto.getName());
