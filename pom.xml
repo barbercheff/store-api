@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.immfly</groupId>
-	<artifactId>storeapi</artifactId>
+	<artifactId>store-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>storeapi</name>
+	<name>store-api</name>
 	<description>Backend Test for Immfly</description>
 	<url/>
 	<licenses>
