@@ -3,9 +3,7 @@ package com.immfly.storeapi.service.impl;
 import com.immfly.storeapi.dto.OrderDTO;
 import com.immfly.storeapi.enums.OrderStatus;
 import com.immfly.storeapi.enums.PaymentStatus;
-import com.immfly.storeapi.exception.OrderAlreadyFinishedException;
-import com.immfly.storeapi.exception.OutOfStockException;
-import com.immfly.storeapi.exception.ResourceNotFoundException;
+import com.immfly.storeapi.exception.*;
 import com.immfly.storeapi.mapper.OrderMapper;
 import com.immfly.storeapi.model.*;
 import com.immfly.storeapi.repository.OrderRepository;
@@ -14,8 +12,11 @@ import com.immfly.storeapi.repository.ProductRepository;
 import com.immfly.storeapi.service.OrderService;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,11 +25,13 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final ProductOrderRepository productOrderRepository;
+    private final RestTemplate restTemplate;
 
-    public OrderServiceImpl(OrderRepository orderRepository, ProductRepository productRepository, ProductOrderRepository productOrderRepository) {
+    public OrderServiceImpl(OrderRepository orderRepository, ProductRepository productRepository, ProductOrderRepository productOrderRepository, RestTemplate restTemplate) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.productOrderRepository = productOrderRepository;
+        this.restTemplate = restTemplate;
     }
 
     @Override
@@ -95,7 +98,46 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderDTO finishOrder(Long id) {
-        return null;
+        Order existingOrder = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+
+        if (existingOrder.getStatus() == OrderStatus.FINISHED) {
+            throw new OrderAlreadyFinishedException("Order already finished with id: " + id);
+        }
+
+        String baseUrl = "http://localhost:8080/mock-payment";
+        String endpoint;
+
+        switch (existingOrder.getPaymentGateway()) {
+            case STRIPE -> endpoint = "/stripe";
+            case PAYPAL -> endpoint = "/paypal";
+            default -> throw new UnsupportedPaymentGatewayException("Unsupported payment gateway: " + existingOrder.getPaymentGateway());
+        }
+
+        String url = baseUrl + endpoint + "?cardToken=" + existingOrder.getCardToken() + "&amount=" + existingOrder.getTotalPrice();
+
+        try {
+            PaymentStatus paymentStatus = restTemplate.postForObject(url, null, PaymentStatus.class);
+
+            if (paymentStatus == null) {
+                throw new PaymentStatusNullException("Payment gateway returned null for order id: " + id);
+            }
+
+            existingOrder.setPaymentStatus(paymentStatus);
+
+            if (paymentStatus == PaymentStatus.PAID) {
+                existingOrder.setStatus(OrderStatus.FINISHED);
+                existingOrder.setPaymentDate(LocalDateTime.now());
+            } else {
+                existingOrder.setStatus(OrderStatus.DROPPED);
+            }
+
+            orderRepository.save(existingOrder);
+            return OrderMapper.toDto(existingOrder);
+
+        } catch (RestClientException ex) {
+            throw new PaymentGatewayException("Error calling payment gateway: " + ex.getMessage(), ex);
+        }
     }
 
     @Override
@@ -105,7 +147,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
         if (existingOrder.getStatus() == OrderStatus.FINISHED) {
-            throw new OrderAlreadyFinishedException("Cannot update a finished order with id: " + id);
+            throw new OrderAlreadyFinishedException("Cannot cancel a finished order with id: " + id);
         }
 
         existingOrder.setStatus(OrderStatus.DROPPED);
