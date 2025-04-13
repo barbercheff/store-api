@@ -21,5 +21,6 @@ The token must be included in the Authorization header for all protected request
   - POST /auth/login
   - POST /mock-payment/stripe
   - POST /mock-payment/paypal
+  - 
 -Protected endpoints (authentication required):
   -All other endpoints, such as /categories, /products, /orders, etc.
