@@ -8,12 +8,15 @@ public class ProductMapper {
         if (product == null) {
             return null;
         }
+
         ProductDTO dto = new ProductDTO();
         dto.setId(product.getId());
         dto.setName(product.getName());
         dto.setCategoryId(product.getCategory().getId());
         dto.setPrice(product.getPrice());
         dto.setImageUrl(product.getImageUrl());
+        dto.setStock(product.getStock());
+
         return dto;
     }
 
@@ -27,6 +30,7 @@ public class ProductMapper {
         product.setName(dto.getName());
         product.setPrice(dto.getPrice());
         product.setImageUrl(dto.getImageUrl());
+        product.setStock(dto.getStock());
 
         return product;
     }

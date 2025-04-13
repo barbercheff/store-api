@@ -3,21 +3,29 @@ package com.immfly.storeapi.dto;
 import java.math.BigDecimal;
 
 public class ProductDTO {
+
     private Long id;
+
     private String name;
+
     private BigDecimal price;
+
     private String imageUrl;
+
     private Long categoryId;
+
+    private Integer stock;
 
     public ProductDTO() {
     }
 
-    public ProductDTO(Long id, String name, BigDecimal price, String imageUrl, Long categoryId) {
+    public ProductDTO(Long id, String name, BigDecimal price, String imageUrl, Long categoryId, Integer stock) {
         this.id = id;
         this.name = name;
         this.price = price;
         this.imageUrl = imageUrl;
         this.categoryId = categoryId;
+        this.stock = stock;
     }
 
     public Long getId() {
@@ -58,5 +66,13 @@ public class ProductDTO {
 
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public Integer getStock() {
+        return stock;
+    }
+
+    public void setStock(Integer stock) {
+        this.stock = stock;
     }
 }

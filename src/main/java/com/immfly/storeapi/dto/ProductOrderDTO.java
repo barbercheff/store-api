@@ -1,7 +1,9 @@
 package com.immfly.storeapi.dto;
 
 public class ProductOrderDTO {
+
     private Long orderId;
+
     private Long productId;
 
     public ProductOrderDTO() {

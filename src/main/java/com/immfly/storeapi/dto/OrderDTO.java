@@ -3,28 +3,46 @@ package com.immfly.storeapi.dto;
 import com.immfly.storeapi.enums.OrderStatus;
 import com.immfly.storeapi.enums.PaymentGateway;
 import com.immfly.storeapi.enums.PaymentStatus;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class OrderDTO {
+
     private Long id;
+
     private BigDecimal totalPrice;
+
     private String cardToken;
+
     private PaymentStatus paymentStatus;
+
     private LocalDateTime paymentDate;
+
     private PaymentGateway paymentGateway;
+
     private OrderStatus status;
+
+    @NotBlank
     private String buyerEmail;
-    private String seatLetter;
-    private int seatNumber;
+
+    @NotNull
+    private Character seatLetter;
+
+    @NotNull
+    private Integer seatNumber;
+
+    private List<Long> productIds;
 
     public OrderDTO() {
     }
 
     public OrderDTO(Long id, BigDecimal totalPrice, String cardToken, PaymentStatus paymentStatus,
-                    LocalDateTime paymentDate, PaymentGateway paymentGateway, OrderStatus status,
-                    String buyerEmail, String seatLetter, int seatNumber) {
+                    LocalDateTime paymentDate, PaymentGateway paymentGateway, OrderStatus status, String buyerEmail,
+                    Character seatLetter, Integer seatNumber, List<Long> productIds) {
         this.id = id;
         this.totalPrice = totalPrice;
         this.cardToken = cardToken;
@@ -35,6 +53,7 @@ public class OrderDTO {
         this.buyerEmail = buyerEmail;
         this.seatLetter = seatLetter;
         this.seatNumber = seatNumber;
+        this.productIds = productIds;
     }
 
     public Long getId() {
@@ -101,19 +120,27 @@ public class OrderDTO {
         this.buyerEmail = buyerEmail;
     }
 
-    public String getSeatLetter() {
+    public Character getSeatLetter() {
         return seatLetter;
     }
 
-    public void setSeatLetter(String seatLetter) {
+    public void setSeatLetter(Character seatLetter) {
         this.seatLetter = seatLetter;
     }
 
-    public int getSeatNumber() {
+    public Integer getSeatNumber() {
         return seatNumber;
     }
 
-    public void setSeatNumber(int seatNumber) {
+    public void setSeatNumber(Integer seatNumber) {
         this.seatNumber = seatNumber;
+    }
+
+    public List<Long> getProductIds() {
+        return productIds;
+    }
+
+    public void setProductIds(List<Long> productIds) {
+        this.productIds = productIds;
     }
 }

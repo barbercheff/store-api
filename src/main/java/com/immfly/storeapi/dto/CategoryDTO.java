@@ -1,8 +1,11 @@
 package com.immfly.storeapi.dto;
 
 public class CategoryDTO {
+
     private Long id;
+
     private String name;
+
     private Long parentCategoryId;
 
     public CategoryDTO() {
