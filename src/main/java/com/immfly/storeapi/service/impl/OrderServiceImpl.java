@@ -1,6 +1,7 @@
 package com.immfly.storeapi.service.impl;
 
 import com.immfly.storeapi.dto.OrderDTO;
+import com.immfly.storeapi.dto.PaymentResponse;
 import com.immfly.storeapi.enums.OrderStatus;
 import com.immfly.storeapi.enums.PaymentStatus;
 import com.immfly.storeapi.exception.*;
@@ -106,29 +107,27 @@ public class OrderServiceImpl implements OrderService {
         }
 
         String baseUrl = "http://localhost:8080/mock-payment";
-        String endpoint;
-
-        switch (existingOrder.getPaymentGateway()) {
-            case STRIPE -> endpoint = "/stripe";
-            case PAYPAL -> endpoint = "/paypal";
+        String endpoint = switch (existingOrder.getPaymentGateway()) {
+            case STRIPE -> "/stripe";
+            case PAYPAL -> "/paypal";
             default -> throw new UnsupportedPaymentGatewayException("Unsupported payment gateway: " + existingOrder.getPaymentGateway());
-        }
+        };
 
         String url = baseUrl + endpoint + "?cardToken=" + existingOrder.getCardToken() + "&amount=" + existingOrder.getTotalPrice();
 
         try {
-            PaymentStatus paymentStatus = restTemplate.postForObject(url, null, PaymentStatus.class);
+            PaymentResponse paymentResponse = restTemplate.postForObject(url, null, PaymentResponse.class);
 
-            if (paymentStatus == null) {
+            if (paymentResponse == null || paymentResponse.getStatus() == null) {
                 throw new PaymentStatusNullException("Payment gateway returned null for order id: " + id);
             }
 
-            existingOrder.setPaymentStatus(paymentStatus);
-
-            if (paymentStatus == PaymentStatus.PAID) {
+            if ("success".equalsIgnoreCase(paymentResponse.getStatus())) {
+                existingOrder.setPaymentStatus(PaymentStatus.PAID);
                 existingOrder.setStatus(OrderStatus.FINISHED);
                 existingOrder.setPaymentDate(LocalDateTime.now());
             } else {
+                existingOrder.setPaymentStatus(PaymentStatus.FAILED);
                 existingOrder.setStatus(OrderStatus.DROPPED);
             }
 
