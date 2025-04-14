@@ -1,5 +1,6 @@
 package com.immfly.storeapi.service.impl;
 
+import com.immfly.storeapi.dto.FinishOrderRequest;
 import com.immfly.storeapi.dto.OrderDTO;
 import com.immfly.storeapi.dto.PaymentResponse;
 import com.immfly.storeapi.enums.OrderStatus;
@@ -49,6 +50,7 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.OPEN);
         order.setPaymentStatus(PaymentStatus.PENDING);
         order.setPaymentDate(null);
+        order.setTotalPrice(BigDecimal.ZERO);
 
         Order savedOrder = orderRepository.save(order);
 
@@ -75,8 +77,8 @@ public class OrderServiceImpl implements OrderService {
         Order existingOrder = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
-        if (existingOrder.getStatus() == OrderStatus.FINISHED) {
-            throw new OrderAlreadyFinishedException("Cannot update a finished order with id: " + id);
+        if (existingOrder.getStatus() == OrderStatus.FINISHED || existingOrder.getStatus() == OrderStatus.DROPPED) {
+            throw new OrderNotUpdatableException("Cannot update an order that is finished or dropped with id: " + id);
         }
 
         existingOrder.setBuyerEmail(orderDTO.getBuyerEmail());
@@ -91,29 +93,35 @@ public class OrderServiceImpl implements OrderService {
         return OrderMapper.toDto(updatedOrder);
     }
 
+    @Transactional
     @Override
     public void deleteOrder(Long id) {
-        orderRepository.deleteById(id);
-    }
-
-    @Override
-    @Transactional
-    public OrderDTO finishOrder(Long id) {
         Order existingOrder = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
         if (existingOrder.getStatus() == OrderStatus.FINISHED) {
-            throw new OrderAlreadyFinishedException("Order already finished with id: " + id);
+            throw new OrderNotDeletableException("Cannot delete a finished order with id: " + id);
         }
 
-        String baseUrl = "http://localhost:8080/mock-payment";
-        String endpoint = switch (existingOrder.getPaymentGateway()) {
-            case STRIPE -> "/stripe";
-            case PAYPAL -> "/paypal";
-            default -> throw new UnsupportedPaymentGatewayException("Unsupported payment gateway: " + existingOrder.getPaymentGateway());
-        };
+        productOrderRepository.deleteAllByOrder(existingOrder);
 
-        String url = baseUrl + endpoint + "?cardToken=" + existingOrder.getCardToken() + "&amount=" + existingOrder.getTotalPrice();
+        orderRepository.delete(existingOrder);
+    }
+
+    @Override
+    @Transactional
+    public OrderDTO finishOrder(Long id, FinishOrderRequest request) {
+        Order existingOrder = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+
+        if (existingOrder.getStatus() == OrderStatus.FINISHED || existingOrder.getStatus() == OrderStatus.DROPPED) {
+            throw new OrderNotUpdatableException("Cannot update an order that is finished or dropped with id: " + id);
+        }
+
+        existingOrder.setCardToken(request.getCardToken());
+        existingOrder.setPaymentGateway(request.getPaymentGateway());
+
+        String url = buildPaymentGatewayUrl(existingOrder);
 
         try {
             PaymentResponse paymentResponse = restTemplate.postForObject(url, null, PaymentResponse.class);
@@ -122,15 +130,7 @@ public class OrderServiceImpl implements OrderService {
                 throw new PaymentStatusNullException("Payment gateway returned null for order id: " + id);
             }
 
-            if ("success".equalsIgnoreCase(paymentResponse.getStatus())) {
-                // FALTA DESCONTAR EL STOCK!!!!!
-                existingOrder.setPaymentStatus(PaymentStatus.PAID);
-                existingOrder.setStatus(OrderStatus.FINISHED);
-                existingOrder.setPaymentDate(LocalDateTime.now());
-            } else {
-                existingOrder.setPaymentStatus(PaymentStatus.FAILED);
-                existingOrder.setStatus(OrderStatus.DROPPED);
-            }
+            processPaymentResponse(existingOrder, paymentResponse);
 
             orderRepository.save(existingOrder);
             return OrderMapper.toDto(existingOrder);
@@ -146,8 +146,8 @@ public class OrderServiceImpl implements OrderService {
         Order existingOrder = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
-        if (existingOrder.getStatus() == OrderStatus.FINISHED) {
-            throw new OrderAlreadyFinishedException("Cannot cancel a finished order with id: " + id);
+        if (existingOrder.getStatus() == OrderStatus.FINISHED || existingOrder.getStatus() == OrderStatus.DROPPED) {
+            throw new OrderNotUpdatableException("Cannot update an order that is finished or dropped with id: " + id);
         }
 
         existingOrder.setStatus(OrderStatus.DROPPED);
@@ -181,5 +181,43 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return totalPrice;
+    }
+
+    private String buildPaymentGatewayUrl(Order order) {
+        String baseUrl = "http://localhost:8080/mock-payment";
+        String endpoint = switch (order.getPaymentGateway()) {
+            case STRIPE -> "/stripe";
+            case PAYPAL -> "/paypal";
+            default -> throw new UnsupportedPaymentGatewayException("Unsupported payment gateway: " + order.getPaymentGateway());
+        };
+        return baseUrl + endpoint + "?cardToken=" + order.getCardToken() + "&amount=" + order.getTotalPrice();
+    }
+
+    private void processPaymentResponse(Order order, PaymentResponse paymentResponse) {
+        String paymentResult = paymentResponse.getStatus().toLowerCase();
+
+        if (paymentResult.equals("success") || paymentResult.equals("offline")) {
+            reduceStockForProducts(order);
+
+            order.setPaymentStatus(paymentResult.equals("success") ? PaymentStatus.PAID : PaymentStatus.OFFLINE);
+            order.setStatus(OrderStatus.FINISHED);
+            order.setPaymentDate(LocalDateTime.now());
+        } else {
+            order.setPaymentStatus(PaymentStatus.FAILED);
+            order.setStatus(OrderStatus.DROPPED);
+        }
+    }
+
+    private void reduceStockForProducts(Order order) {
+        for (ProductOrder productOrder : order.getProductOrders()) {
+            Product product = productOrder.getProduct();
+
+            if (product.getStock() == null || product.getStock() <= 0) {
+                throw new OutOfStockException("Product " + product.getName() + " is out of stock when finalizing the order");
+            }
+
+            product.setStock(product.getStock() - 1);
+            productRepository.save(product);
+        }
     }
 }

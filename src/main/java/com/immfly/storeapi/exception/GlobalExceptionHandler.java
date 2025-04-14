@@ -34,11 +34,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(OrderAlreadyFinishedException.class)
-    public ResponseEntity<ErrorResponse> handleOrderAlreadyFinished(OrderAlreadyFinishedException ex) {
+    @ExceptionHandler(OrderNotUpdatableException.class)
+    public ResponseEntity<ErrorResponse> handleOrderNotUpdatable(OrderNotUpdatableException ex) {
         ErrorResponse error = new ErrorResponse(
                 List.of(ex.getMessage()),
-                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.value(), // 409 Conflict
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(OrderNotDeletableException.class)
+    public ResponseEntity<ErrorResponse> handleOrderNotDeletable(OrderNotDeletableException ex) {
+        ErrorResponse error = new ErrorResponse(
+                List.of(ex.getMessage()),
+                HttpStatus.CONFLICT.value(), // 409 Conflict
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);

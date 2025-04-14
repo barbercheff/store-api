@@ -51,7 +51,7 @@ Simple e-commerce API project for product, category, and order management, devel
 - `PUT /orders/{id}`
 - `DELETE /orders/{id}`
 - `POST /orders/{id}/finish`
-- `POST /orders/{id}/cancel`
+- `PATCH /orders/{id}/cancel`
 
 #### Mock Payment Gateway
 - `POST /mock-payment/stripe`
@@ -128,7 +128,7 @@ All error responses have the following structure:
 |:----------|:------------|:------------|
 | `ResourceNotFoundException` | 404 Not Found | Resource not found |
 | `OutOfStockException` | 400 Bad Request | Product has no stock available |
-| `OrderAlreadyFinishedException` | 409 Conflict | Trying to modify an already finished order |
+| `OrderNotUpdatableException` | 409 Conflict | Cannot update an order that is finished or dropped |
 | `PaymentGatewayException` | 502 Bad Gateway | Error calling external payment service |
 | `PaymentStatusNullException` | 502 Bad Gateway | Payment gateway returned null |
 | `UnsupportedPaymentGatewayException` | 400 Bad Request | Unsupported payment gateway type |

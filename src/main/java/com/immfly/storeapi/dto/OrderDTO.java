@@ -3,6 +3,8 @@ package com.immfly.storeapi.dto;
 import com.immfly.storeapi.enums.OrderStatus;
 import com.immfly.storeapi.enums.PaymentGateway;
 import com.immfly.storeapi.enums.PaymentStatus;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -16,23 +18,21 @@ public class OrderDTO {
 
     private BigDecimal totalPrice;
 
-    private String cardToken;
-
     private PaymentStatus paymentStatus;
 
     private LocalDateTime paymentDate;
 
-    private PaymentGateway paymentGateway;
-
     private OrderStatus status;
 
-    @NotBlank
+    @NotBlank(message = "Buyer email must not be blank")
+    @Email(message = "Buyer email must be a valid email address")
     private String buyerEmail;
 
-    @NotNull
+    @NotNull(message = "Seat letter must not be null")
     private Character seatLetter;
 
-    @NotNull
+    @NotNull(message = "Seat number must not be null")
+    @Min(value = 1, message = "Seat number must be greater than 0")
     private Integer seatNumber;
 
     private List<Long> productIds;
@@ -40,15 +40,13 @@ public class OrderDTO {
     public OrderDTO() {
     }
 
-    public OrderDTO(Long id, BigDecimal totalPrice, String cardToken, PaymentStatus paymentStatus,
-                    LocalDateTime paymentDate, PaymentGateway paymentGateway, OrderStatus status, String buyerEmail,
+    public OrderDTO(Long id, BigDecimal totalPrice, PaymentStatus paymentStatus,
+                    LocalDateTime paymentDate, OrderStatus status, String buyerEmail,
                     Character seatLetter, Integer seatNumber, List<Long> productIds) {
         this.id = id;
         this.totalPrice = totalPrice;
-        this.cardToken = cardToken;
         this.paymentStatus = paymentStatus;
         this.paymentDate = paymentDate;
-        this.paymentGateway = paymentGateway;
         this.status = status;
         this.buyerEmail = buyerEmail;
         this.seatLetter = seatLetter;
@@ -72,14 +70,6 @@ public class OrderDTO {
         this.totalPrice = totalPrice;
     }
 
-    public String getCardToken() {
-        return cardToken;
-    }
-
-    public void setCardToken(String cardToken) {
-        this.cardToken = cardToken;
-    }
-
     public PaymentStatus getPaymentStatus() {
         return paymentStatus;
     }
@@ -94,14 +84,6 @@ public class OrderDTO {
 
     public void setPaymentDate(LocalDateTime paymentDate) {
         this.paymentDate = paymentDate;
-    }
-
-    public PaymentGateway getPaymentGateway() {
-        return paymentGateway;
-    }
-
-    public void setPaymentGateway(PaymentGateway paymentGateway) {
-        this.paymentGateway = paymentGateway;
     }
 
     public OrderStatus getStatus() {
