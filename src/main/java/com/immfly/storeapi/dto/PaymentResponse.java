@@ -1,7 +1,7 @@
 package com.immfly.storeapi.dto;
 
 public class PaymentResponse {
-    private String status; // "success" o "failed"
+    private String status;
     private String transactionId;
     private String message;
 

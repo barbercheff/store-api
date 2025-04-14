@@ -104,6 +104,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(ProductAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleProductAlreadyExistsException(ProductAlreadyExistsException ex) {
+        ErrorResponse error = new ErrorResponse(
+                List.of(ex.getMessage()),
+                HttpStatus.CONFLICT.value(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
         List<String> validationErrors = ex.getBindingResult()
@@ -118,6 +128,16 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ProductDeletionException.class)
+    public ResponseEntity<ErrorResponse> handleProductDeletionException(ProductDeletionException ex) {
+        ErrorResponse error = new ErrorResponse(
+                List.of(ex.getMessage()),
+                HttpStatus.CONFLICT.value(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)

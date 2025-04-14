@@ -72,6 +72,12 @@ public class CategoryServiceImpl implements CategoryService {
             existingCategory.setParentCategory(null);
         }
 
+        categoryRepository.findByName(categoryDTO.getName())
+                .filter(c -> !c.getId().equals(id))
+                .ifPresent(c -> {
+                    throw new CategoryAlreadyExistsException("Category with name '" + categoryDTO.getName() + "' already exists");
+                });
+
         existingCategory.setName(categoryDTO.getName());
 
         Category updatedCategory = categoryRepository.save(existingCategory);

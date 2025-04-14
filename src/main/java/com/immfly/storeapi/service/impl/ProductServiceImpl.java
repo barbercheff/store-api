@@ -1,6 +1,9 @@
 package com.immfly.storeapi.service.impl;
 
 import com.immfly.storeapi.dto.ProductDTO;
+import com.immfly.storeapi.exception.CategoryAlreadyExistsException;
+import com.immfly.storeapi.exception.ProductAlreadyExistsException;
+import com.immfly.storeapi.exception.ProductDeletionException;
 import com.immfly.storeapi.exception.ResourceNotFoundException;
 import com.immfly.storeapi.mapper.ProductMapper;
 import com.immfly.storeapi.model.Category;
@@ -33,16 +36,16 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO createProduct(ProductDTO productDTO) {
+        if (productRepository.existsByName(productDTO.getName())) {
+            throw new ProductAlreadyExistsException("Product with name '" + productDTO.getName() + "' already exists");
+        }
+
         Product product = ProductMapper.toEntity(productDTO);
 
-        if (productDTO.getCategoryId() != null) {
-            Category category = categoryRepository.findById(productDTO.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + productDTO.getCategoryId()));
-            product.setCategory(category);
-        } else {
-            // TIENE SENTIDO UN PRODUCTO SIN CATEGORÍA???
-            product.setCategory(null);
-        }
+        Category category = categoryRepository.findById(productDTO.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + productDTO.getCategoryId()));
+
+        product.setCategory(category);
 
         Product savedProduct = productRepository.save(product);
         return ProductMapper.toDto(savedProduct);
@@ -59,6 +62,12 @@ public class ProductServiceImpl implements ProductService {
     public ProductDTO updateProduct(Long id, ProductDTO productDTO) {
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+
+        productRepository.findByName(productDTO.getName())
+                .filter(p -> !p.getId().equals(id))
+                .ifPresent(p -> {
+                    throw new ProductAlreadyExistsException("Product with name '" + productDTO.getName() + "' already exists");
+                });
 
         existingProduct.setName(productDTO.getName());
         existingProduct.setPrice(productDTO.getPrice());
@@ -78,6 +87,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+        Product existingProduct = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+
+        if (!existingProduct.getProductOrders().isEmpty()) {
+            throw new ProductDeletionException("Cannot delete product because it is associated with existing orders");
+        }
+
+        productRepository.delete(existingProduct);
     }
 }

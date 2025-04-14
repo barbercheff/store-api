@@ -73,13 +73,13 @@ The token must be included in the Authorization header for all protected request
 
 #### Authentication Flow
 1. The user sends their credentials (username and password) to `/auth/login`.
-2. If the credentials are correct, a JWT token valid for 24 hours is returned.
+2. If the credentials are correct, a JWT token valid for 1 hour is returned.
 3. This token must be included in the Authorization header of subsequent API requests.
 4. If the token is missing, invalid, or expired, the API will respond with a 401 Unauthorized error.
 
 #### Authentication Details
 - JWT Secret: Defined in `application.properties`.
-- Token expiration time: 24 hours (configurable).
+- Token expiration time: 1 hour (configurable).
 - Login credentials:
     - Username: defined in `application.properties` (`auth.username`)
     - Password: defined in `application.properties` (`auth.password`)
