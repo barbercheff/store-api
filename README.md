@@ -117,7 +117,7 @@ All error responses have the following structure:
 ```json
 {
   "error": "Error description",
-  "status": HTTP status code,
+  "status": "HTTP status code",
   "timestamp": "Date and time of the error"
 }
 ```
