@@ -123,6 +123,7 @@ public class OrderServiceImpl implements OrderService {
             }
 
             if ("success".equalsIgnoreCase(paymentResponse.getStatus())) {
+                // FALTA DESCONTAR EL STOCK!!!!!
                 existingOrder.setPaymentStatus(PaymentStatus.PAID);
                 existingOrder.setStatus(OrderStatus.FINISHED);
                 existingOrder.setPaymentDate(LocalDateTime.now());

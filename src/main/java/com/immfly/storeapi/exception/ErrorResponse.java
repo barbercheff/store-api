@@ -1,24 +1,25 @@
 package com.immfly.storeapi.exception;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class ErrorResponse {
-    private String error;
+    private List<String> errors;
     private int status;
     private LocalDateTime timestamp;
 
-    public ErrorResponse(String error, int status) {
-        this.error = error;
+    public ErrorResponse(List<String> errors, int status, LocalDateTime timestamp) {
+        this.errors = errors;
         this.status = status;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = timestamp;
     }
 
-    public String getError() {
-        return error;
+    public List<String> getErrors() {
+        return errors;
     }
 
-    public void setError(String error) {
-        this.error = error;
+    public void setErrors(List<String> errors) {
+        this.errors = errors;
     }
 
     public int getStatus() {

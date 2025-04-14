@@ -1,6 +1,7 @@
 package com.immfly.storeapi.service.impl;
 
 import com.immfly.storeapi.dto.CategoryDTO;
+import com.immfly.storeapi.exception.CategoryAlreadyExistsException;
 import com.immfly.storeapi.exception.CategoryDeletionException;
 import com.immfly.storeapi.exception.InvalidCategoryHierarchyException;
 import com.immfly.storeapi.exception.ResourceNotFoundException;
@@ -30,6 +31,10 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDTO createCategory(CategoryDTO categoryDTO) {
+        if (categoryRepository.existsByName(categoryDTO.getName())) {
+            throw new CategoryAlreadyExistsException("Category with name '" + categoryDTO.getName() + "' already exists");
+        }
+
         Category category = CategoryMapper.toEntity(categoryDTO);
 
         if (categoryDTO.getParentCategoryId() != null) {

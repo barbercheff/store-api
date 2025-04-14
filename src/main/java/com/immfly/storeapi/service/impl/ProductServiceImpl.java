@@ -40,6 +40,7 @@ public class ProductServiceImpl implements ProductService {
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + productDTO.getCategoryId()));
             product.setCategory(category);
         } else {
+            // TIENE SENTIDO UN PRODUCTO SIN CATEGORÍA???
             product.setCategory(null);
         }
 

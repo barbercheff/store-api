@@ -1,9 +1,12 @@
 package com.immfly.storeapi.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class CategoryDTO {
 
     private Long id;
 
+    @NotBlank(message = "Category name must not be blank")
     private String name;
 
     private Long parentCategoryId;
