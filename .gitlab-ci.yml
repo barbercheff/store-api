@@ -5,10 +5,6 @@ stages:
 variables:
   MAVEN_CLI_OPTS: "--batch-mode"
 
-cache:
-  paths:
-    - .m2/repository
-
 before_script:
   - echo "Using Java 17 and Maven"
 

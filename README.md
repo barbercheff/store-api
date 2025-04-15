@@ -273,3 +273,17 @@ mvn test
 This command will run all tests located in the `src/test/java` directory.
 
 You can also run tests inside your IDE (such as IntelliJ or Eclipse) by right-clicking on the `test` directory or any individual test class and selecting **Run Tests**.
+
+## CI/CD
+
+This project integrates **CI (Continuous Integration)** using **GitLab CI**.
+
+Every time a `push` is made to the main branch, a pipeline is automatically triggered to perform:
+
+- **Project compilation** (`mvn clean compile`)
+- **Test execution** (`mvn test`)
+- **Final `.jar` generation** (`mvn package`)
+
+This pipeline ensures the code is always in a functional state before deployment or publication.
+
+The **CD (Continuous Deployment)** part has not been automated, but it could be added as an extra step in the pipeline.
