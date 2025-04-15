@@ -3,6 +3,8 @@
 ## Table of Contents
 - [About the Project](#about-the-project)
 - [Technologies Used](#technologies-used)
+- [Technical & Design Decisions](#technical--design-decisions)
+- [Project structure overview](#project-structure-overview)
 - [How to Run](#how-to-run)
 - [Running with Docker](#running-with-docker)
 - [API Endpoints](#api-endpoints)
@@ -19,6 +21,41 @@ Simple e-commerce API project for product, category, and order management, devel
 - Maven
 - MySQL
 - Docker (optional)
+
+## Technical & Design Decisions
+
+#### Domain Model & Database
+- **Product and Category names must be unique** to avoid confusion when ordering. This is enforced both at the database level (UNIQUE constraint) and at the service layer (custom validation).
+- **Categories support hierarchy** through a self-referencing relationship, allowing each category to have a `parentCategory`.
+- **Stock field added** to `Product` (not explicitly required in the instructions) to track inventory for order management.
+- **Many-to-many between `Order` and `Product` modeled using `ProductOrder`**, an intermediate entity. This provides flexibility for future enhancements (e.g., quantity, unit price), instead of using a direct `@ManyToMany`.
+- **Composite key managed via `@Embeddable` `ProductOrderId`** for `ProductOrder`.
+
+#### DTOs, Services & Mappers
+- DTOs are used across all layers to decouple the API from the persistence model. This provides security and flexibility for shaping API responses.
+- Static mapper classes (`ProductMapper`, `OrderMapper`, etc.) handle transformations between entities and DTOs.
+- Services work only with DTOs to maintain a clear separation of concerns.
+
+#### Validation & Error Handling
+- DTO fields use annotations like `@NotBlank`, `@NotNull`, `@Positive` to enforce constraints.
+- A centralized `@ControllerAdvice` handles exceptions and returns consistent `ErrorResponse` objects.
+- Custom exceptions include: `ResourceNotFoundException`, `OrderAlreadyFinishedException`, `OutOfStockException`, `UnsupportedPaymentGatewayException`, `CategoryAlreadyExistsException`, etc.
+
+#### Payment Flow
+- `finishOrder` receives the `cardToken` and `paymentGateway` via a dedicated request object (`FinishOrderRequest`) from the frontend.
+- A **mock payment gateway** is implemented via `PaymentGatewayController`, which simulates Stripe and PayPal endpoints.
+- The mock responds with `"success"`, `"offline"` or `"failed"`, simulating real-world scenarios.
+- If payment is successful or offline, stock is reduced accordingly. Otherwise, the order is marked as `DROPPED`.
+
+#### Order Lifecycle & Constraints
+- Orders cannot be modified or canceled once marked as `FINISHED` or `DROPPED`.
+- Stock is not deducted when creating an order but only once payment is completed.
+- When an order is deleted, related `ProductOrder` records are removed first to maintain referential integrity.
+
+#### Other Conventions
+- Financial fields like `price` and `totalPrice` use `BigDecimal` to ensure precision.
+- Enums like `OrderStatus`, `PaymentGateway`, and `PaymentStatus` are persisted as strings for better readability.
+- Lists like `List<ProductOrder>` are always initialized to avoid `NullPointerException`.
 
 ## How to Run
 1. Clone the project
@@ -197,3 +234,15 @@ Unit tests have been added to cover the most important business logic in the app
 - **Basic retrieval tests** (`getById`, `getAll`) and validation of common edge cases.
 
 Mocks and assertions ensure correctness of each service method. Full integration or controller tests could be a future improvement.
+
+#### How to run tests
+
+To execute all unit tests in the project, run the following command from the root directory:
+
+```bash
+mvn test
+```
+
+This command will run all tests located in the `src/test/java` directory.
+
+You can also run tests inside your IDE (such as IntelliJ or Eclipse) by right-clicking on the `test` directory or any individual test class and selecting **Run Tests**.
