@@ -57,6 +57,33 @@ Simple e-commerce API project for product, category, and order management, devel
 - Enums like `OrderStatus`, `PaymentGateway`, and `PaymentStatus` are persisted as strings for better readability.
 - Lists like `List<ProductOrder>` are always initialized to avoid `NullPointerException`.
 
+## Project structure overview
+
+Here's a brief explanation of the key packages used in this project:
+
+```
+src
+├── main
+│   ├── java
+│   │   └── com.immfly.storeapi
+│   │       ├── controller       → Handles HTTP requests for each resource
+│   │       ├── dto              → Contains Data Transfer Objects for API input/output
+│   │       ├── exception        → Custom exception classes + global error handler
+│   │       ├── mapper           → Converts between DTOs and entities
+│   │       ├── model            → JPA entity classes representing the database
+│   │       ├── repository       → Spring Data JPA interfaces to access the DB
+│   │       ├── security         → JWT filter + security config
+│   │       └── service
+│   │           ├── impl         → Business logic implementation
+│   │           └──              → Service interfaces
+│   └── resources
+│       ├── application.properties           → Base configuration
+│       └── application-docker.properties    → Configuration used in Docker environment
+└── test
+    └── java
+        └── com.immfly.storeapi              → Unit tests for services
+```
+
 ## How to Run
 1. Clone the project
 2. Set up the database (see `init.sql` if available).
