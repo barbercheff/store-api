@@ -4,9 +4,11 @@
 - [About the Project](#about-the-project)
 - [Technologies Used](#technologies-used)
 - [How to Run](#how-to-run)
+- [Running with Docker](#running-with-docker)
 - [API Endpoints](#api-endpoints)
 - [API Security](#api-security)
 - [Error Handling](#error-handling)
+- [Unit Tests](#unit-tests)
 
 ## About the Project
 Simple e-commerce API project for product, category, and order management, developed with Java, Spring Boot, Maven, and MySQL.
@@ -24,9 +26,42 @@ Simple e-commerce API project for product, category, and order management, devel
 3. Configure your `application.properties`.
 4. Run the project:
    ```bash
-   ./mvn spring-boot:run
+   mvn spring-boot:run
    ```
 5. The API will be available at `http://localhost:8080/`
+
+## Running with Docker
+
+You can run the entire project using Docker and Docker Compose.
+
+#### Prerequisites
+
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+#### How to Run
+
+1. Build the project JAR:
+   ```bash
+   mvn clean package
+   ```
+
+2. Start the containers:
+   ```bash
+   docker-compose up --build
+   ```
+
+3. The API will be available at `http://localhost:8080`
+
+4. MySQL will be running on `localhost:3306` with:
+    - Database: `storedb`
+    - User: `storeuser`
+    - Password: `storepass`
+
+#### Notes
+
+- The `init.sql` script is automatically loaded on startup to set up the schema and initial data.
+- Spring automatically connects to the database using environment variables provided in `docker-compose.yml`.
 
 ## API Endpoints
 
@@ -124,16 +159,41 @@ All error responses have the following structure:
 
 #### Handled Exceptions
 
-| Exception | HTTP Status | Description |
-|:----------|:------------|:------------|
-| `ResourceNotFoundException` | 404 Not Found | Resource not found |
-| `OutOfStockException` | 400 Bad Request | Product has no stock available |
-| `OrderNotUpdatableException` | 409 Conflict | Cannot update an order that is finished or dropped |
-| `PaymentGatewayException` | 502 Bad Gateway | Error calling external payment service |
-| `PaymentStatusNullException` | 502 Bad Gateway | Payment gateway returned null |
-| `UnsupportedPaymentGatewayException` | 400 Bad Request | Unsupported payment gateway type |
-| `InvalidCategoryHierarchyException` | 400 Bad Request | Circular parent-child relationship in categories |
+| Exception | HTTP Status | Description                                                     |
+|:----------|:------------|:----------------------------------------------------------------|
+| `ResourceNotFoundException` | 404 Not Found | Resource not found                                              |
+| `OutOfStockException` | 400 Bad Request | Product has no stock available                                  |
+| `OrderNotUpdatableException` | 409 Conflict | Cannot update an order that is finished or dropped              |
+| `OrderNotDeletableException` | 409 Conflict | Cannot delete a finished order                                  |
+| `PaymentGatewayException` | 502 Bad Gateway | Error calling external payment service                          |
+| `PaymentStatusNullException` | 502 Bad Gateway | Payment gateway returned null                                   |
+| `UnsupportedPaymentGatewayException` | 400 Bad Request | Unsupported payment gateway type                                |
+| `InvalidCategoryHierarchyException` | 400 Bad Request | Circular parent-child relationship in categories                |
 | `CategoryDeletionException` | 409 Conflict | Attempting to delete a category that still has child categories |
-| `CategoryAlreadyExistsException` | 409 Conflict | Duplicate category name |
-| `MethodArgumentNotValidException` | 400 Bad Request | Validation errors in request body |
-| `Exception` (generic) | 500 Internal Server Error | Unhandled exception |
+| `CategoryAlreadyExistsException` | 409 Conflict | Duplicate category name                                         |
+| `ProductAlreadyExistsException` | 409 Conflict | Product already exists                                          |
+| `MethodArgumentNotValidException` | 400 Bad Request | Validation errors in request body                               |
+| `ProductDeletionException` | 409 Conflict | Cannot delete product because it is associated with existing orders                                          |
+| `Exception` (generic) | 500 Internal Server Error | Unhandled exception                                             |
+
+## Unit Tests
+
+Unit tests have been added to cover the most important business logic in the application:
+
+- **Order purchasing algorithm** (`finishOrder`), including:
+   - Successful payments.
+   - Offline payments.
+   - Failed payments.
+   - Out-of-stock products.
+   - Invalid or null payment responses.
+   - Restrictions on updating or canceling finished or dropped orders.
+- **Category service:**
+   - Creating categories with and without a parent.
+   - Preventing duplicate category names.
+   - Preventing deletion of categories with subcategories or associated products.
+- **Product service:**
+   - Enforcing unique product names.
+   - Restricting deletion of products that are part of existing orders.
+- **Basic retrieval tests** (`getById`, `getAll`) and validation of common edge cases.
+
+Mocks and assertions ensure correctness of each service method. Full integration or controller tests could be a future improvement.
