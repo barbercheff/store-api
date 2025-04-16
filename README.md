@@ -11,6 +11,7 @@
 - [API Security](#api-security)
 - [Error Handling](#error-handling)
 - [Unit Tests](#unit-tests)
+- [CI/CD](#cicd)
 
 ## About the Project
 Simple e-commerce API project for product, category, and order management, developed with Java, Spring Boot, Maven, and MySQL.
